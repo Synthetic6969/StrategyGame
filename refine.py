@@ -20,6 +20,7 @@ def getMag(c1, c2):
 
 with open("cities.json") as cities_file:
     cities_raw = json.load(cities_file)
+    cities = {}
     cities_refined  = []
     
     big_cities      = {}
@@ -36,6 +37,48 @@ with open("cities.json") as cities_file:
         }
 
         if city_data["population"] >= 500:
+            cities[len(cities)] = city
+
+    # Merge cities which are right next to each other
+    for i1 in list(cities):
+        if not i1 in cities:
+            continue
+        city1 = cities[i1]
+        cities_in_range = []
+
+        for i2 in list(cities):
+            if not i2 in cities:
+                continue
+            city2 = cities[i2]
+            if city1 == city2:
+                continue
+            if city1["country"] != city2["country"]:
+                continue
+            mag = getMag(city1["r3_coordinates"], city2["r3_coordinates"])
+            if mag < 50:
+                cities_in_range.append({"magnitude": mag, "city_index": i2})
+
+        if len(cities_in_range) > 1:
+            # Get biggest near city
+            nearest_big_city = cities_in_range[0]
+            for x in cities_in_range:
+                if x["magnitude"] < nearest_big_city["magnitude"]:
+                    nearest_big_city = x
+            # Sum populations
+            cities_in_range.append({"magnitude": mag, "city_index": i1})
+            for x in cities_in_range:
+                if x["city_index"] == nearest_big_city["city_index"]:
+                    continue
+                c1 = cities[nearest_big_city["city_index"]]
+                c2 = cities[x["city_index"]]
+                print(f'MERGE (ALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}] // {round(x["magnitude"], 0)}km')
+                cities[nearest_big_city["city_index"]]["population"] += cities[x["city_index"]]["population"]
+                del cities[x["city_index"]]
+
+    for i in cities:
+        city = cities[i]
+        
+        if city["population"] >= 500:
             if city["population"] >= 1000000:
                 big_cities[len(big_cities)] = city
             elif city["population"] >= 500000:
@@ -75,7 +118,7 @@ with open("cities.json") as cities_file:
                     continue
                 c1 = big_cities[nearest_big_city["city_index"]]
                 c2 = big_cities[x["city_index"]]
-                print(f'MERGE (BIG): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}]')
+                print(f'MERGE (BIG): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}] // {round(x["magnitude"], 0)}km')
                 big_cities[nearest_big_city["city_index"]]["population"] += big_cities[x["city_index"]]["population"]
                 del big_cities[x["city_index"]]
 
@@ -95,7 +138,7 @@ with open("cities.json") as cities_file:
             if city1["country"] != city2["country"]:
                 continue
             mag = getMag(city1["r3_coordinates"], city2["r3_coordinates"])
-            if mag < 100:
+            if mag < 75:
                 cities_in_range.append({"magnitude": mag, "city_index": i2})
 
         if len(cities_in_range) > 1:
@@ -111,7 +154,7 @@ with open("cities.json") as cities_file:
                     continue
                 c1 = medium_cities[nearest_medium_city["city_index"]]
                 c2 = medium_cities[x["city_index"]]
-                print(f'MERGE (MEDIUM): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}]')
+                print(f'MERGE (MEDIUM): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}] // {round(x["magnitude"], 0)}km')
                 medium_cities[nearest_medium_city["city_index"]]["population"] += medium_cities[x["city_index"]]["population"]
                 del medium_cities[x["city_index"]]
 
@@ -131,7 +174,7 @@ with open("cities.json") as cities_file:
             if city1["country"] != city2["country"]:
                 continue
             mag = getMag(city1["r3_coordinates"], city2["r3_coordinates"])
-            if mag < 100:
+            if mag < 50:
                 cities_in_range.append({"magnitude": mag, "city_index": i2})
 
         if len(cities_in_range) > 1:
@@ -147,7 +190,7 @@ with open("cities.json") as cities_file:
                     continue
                 c1 = small_cities[nearest_small_city["city_index"]]
                 c2 = small_cities[x["city_index"]]
-                print(f'MERGE (SMALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}]')
+                print(f'MERGE (SMALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}] // {round(x["magnitude"], 0)}km')
                 small_cities[nearest_small_city["city_index"]]["population"] += small_cities[x["city_index"]]["population"]
                 del small_cities[x["city_index"]]
 
