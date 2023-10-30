@@ -55,24 +55,25 @@ with open("cities.json") as cities_file:
             if city1["country"] != city2["country"]:
                 continue
             mag = getMag(city1["r3_coordinates"], city2["r3_coordinates"])
-            if mag < 50:
+            if mag < 30:
                 cities_in_range.append({"magnitude": mag, "city_index": i2})
 
         if len(cities_in_range) > 1:
             # Get biggest near city
-            nearest_big_city = cities_in_range[0]
+            highest_pop_city = cities_in_range[0]
             for x in cities_in_range:
-                if x["magnitude"] < nearest_big_city["magnitude"]:
-                    nearest_big_city = x
+                y = cities[x["city_index"]]
+                if y["population"] > cities[highest_pop_city["city_index"]]["population"]:
+                    highest_pop_city = {"population": y["population"], "city_index": highest_pop_city["city_index"]}
             # Sum populations
             cities_in_range.append({"magnitude": mag, "city_index": i1})
             for x in cities_in_range:
-                if x["city_index"] == nearest_big_city["city_index"]:
+                if x["city_index"] == highest_pop_city["city_index"]:
                     continue
-                c1 = cities[nearest_big_city["city_index"]]
+                c1 = cities[highest_pop_city["city_index"]]
                 c2 = cities[x["city_index"]]
                 print(f'MERGE (ALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}] // {round(x["magnitude"], 0)}km')
-                cities[nearest_big_city["city_index"]]["population"] += cities[x["city_index"]]["population"]
+                cities[highest_pop_city["city_index"]]["population"] += cities[x["city_index"]]["population"]
                 del cities[x["city_index"]]
 
     for i in cities:
