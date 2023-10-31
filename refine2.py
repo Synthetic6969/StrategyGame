@@ -53,7 +53,7 @@ with open("cities.json") as cities_file:
             city1 = cities[i1]
             cities_in_range = []
 
-            a = 7000
+            a = 9000
             b = 1000000
             c = 3000000
             #max_distance = a/(math.log(city1["initial_population"]+b))+c
