@@ -15,6 +15,7 @@ def sphericalDistance(c1, c2):
 
 with open("cities.json") as cities_file:
     cities_raw = json.load(cities_file)
+    cities_by_country = {}
     cities = {}
     cities_refined  = []
     
@@ -33,45 +34,57 @@ with open("cities.json") as cities_file:
         }
 
         if city["initial_population"] >= 500:
-            cities[len(cities)] = city
+            if city["country"] not in cities_by_country:
+                cities_by_country[city["country"]] = []
+            cities_by_country[city["country"]].append(city)
+
+    for country, cities in cities_by_country.items():
+        cities_by_country[country] = sorted(cities_by_country[country], key=lambda x: x["population"], reverse=True)
+        dic = {}
+        for i, v in enumerate(cities_by_country[country]):
+            dic[i] = v
+        cities_by_country[country] = dic
 
     # Merge cities which are right next to each other
-    for i1 in list(cities):
-        if not i1 in cities:
-            continue
-        city1 = cities[i1]
-        cities_in_range = []
-
-        max_distance = 1200/(math.log(city1["initial_population"]+6660))-64
-
-        for i2 in list(cities):
-            if i2 <= i1:
+    for country, cities in cities_by_country.items():
+        for i1 in list(cities):
+            if not i1 in cities:
                 continue
-            if not i2 in cities:
-                continue
-            city2 = cities[i2]
-            if city1["country"] != city2["country"]:
-                continue
-            if city1["initial_population"] < city2["initial_population"]:
-                continue
-            mag = sphericalDistance(city1["r3_coordinates"], city2["r3_coordinates"])
-            if mag < max_distance:
-                cities_in_range.append({"magnitude": mag, "city_index": i2})
+            city1 = cities[i1]
+            cities_in_range = []
 
-        if len(cities_in_range) > 1:
-            # Sum populations
-            for x in cities_in_range:
-                c1 = city1
-                c2 = cities[x["city_index"]]
-                print(f'MERGE (ALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}]'.ljust(50) + f'// {round(x["magnitude"], 0)}km')
-                cities[i1]["population"] += cities[x["city_index"]]["population"]
-                del cities[x["city_index"]]
+            a = 2000
+            b = 50000
+            c = 100000
+            #max_distance = a/(math.log(city1["initial_population"]+b))+c
+            max_distance = a*(1/(math.log(b))-1/math.log(city1["initial_population"]+b+c))
 
-    # Append cities to final list before saving
-    for i in cities:
-        del cities[i]["r3_coordinates"]
-        del cities[i]["initial_population"]
-        cities_refined.append(cities[i])
+            for i2 in list(cities):
+                if i2 <= i1:
+                    continue
+                if not i2 in cities:
+                    continue
+                city2 = cities[i2]
+                if city1["initial_population"] < city2["initial_population"]:
+                    continue
+                mag = sphericalDistance(city1["r3_coordinates"], city2["r3_coordinates"])
+                if mag < max_distance:
+                    cities_in_range.append({"magnitude": mag, "city_index": i2})
+
+            if len(cities_in_range) > 1:
+                # Sum populations
+                for x in cities_in_range:
+                    c1 = city1
+                    c2 = cities[x["city_index"]]
+                    print(f'MERGE (ALL): {c1["name"]} [{c1["country"]}] & {c2["name"]} [{c2["country"]}]'.ljust(50) + f'// {round(x["magnitude"], 0)}km')
+                    cities[i1]["population"] += cities[x["city_index"]]["population"]
+                    del cities[x["city_index"]]
+
+        # Append cities to final list before saving
+        for i in cities:
+            del cities[i]["r3_coordinates"]
+            del cities[i]["initial_population"]
+            cities_refined.append(cities[i])
     
     # Save cities to file
     with open("cities_refined2.json", "w") as cities_refined_file:
